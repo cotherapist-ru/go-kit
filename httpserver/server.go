@@ -75,6 +75,7 @@ func NewRouter(opts ...RouterOption) *chi.Mux {
 		r.Use(logger)
 	}
 	r.Use(middleware.Recoverer)
+	r.Use(SecurityHeaders)
 
 	timeout := defaultTimeout
 	if cfg.timeout != nil {

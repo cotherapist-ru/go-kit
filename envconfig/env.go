@@ -78,6 +78,18 @@ func Truthy(key string) bool {
 	}
 }
 
+// RequireWhenDeployed errors if value is empty while running in Kubernetes or
+// when APP_ENV=production. Local/dev processes may start without the secret.
+func RequireWhenDeployed(name, value string) error {
+	if strings.TrimSpace(value) != "" {
+		return nil
+	}
+	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" || strings.EqualFold(os.Getenv("APP_ENV"), "production") {
+		return fmt.Errorf("%s is required in production", name)
+	}
+	return nil
+}
+
 // FirstNonEmpty returns the first non-empty trimmed value.
 func FirstNonEmpty(values ...string) string {
 	for _, v := range values {

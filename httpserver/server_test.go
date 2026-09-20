@@ -22,6 +22,9 @@ func TestNewRouterHealthz(t *testing.T) {
 	if rec.Body.String() != "ok" {
 		t.Fatalf("body=%q", rec.Body.String())
 	}
+	if rec.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Fatalf("missing security headers: nosniff=%q", rec.Header().Get("X-Content-Type-Options"))
+	}
 }
 
 func TestServeShutdown(t *testing.T) {

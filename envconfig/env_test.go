@@ -85,3 +85,18 @@ func TestFirstNonEmpty(t *testing.T) {
 		t.Fatalf("got=%q", got)
 	}
 }
+
+func TestRequireWhenDeployed(t *testing.T) {
+	t.Setenv("KUBERNETES_SERVICE_HOST", "")
+	t.Setenv("APP_ENV", "")
+	if err := RequireWhenDeployed("TOKEN", ""); err != nil {
+		t.Fatalf("local empty should be allowed: %v", err)
+	}
+	t.Setenv("APP_ENV", "production")
+	if err := RequireWhenDeployed("TOKEN", ""); err == nil {
+		t.Fatal("production empty should fail")
+	}
+	if err := RequireWhenDeployed("TOKEN", "secret"); err != nil {
+		t.Fatalf("production with value: %v", err)
+	}
+}

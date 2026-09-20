@@ -21,8 +21,9 @@ func WithUnauthorized(fn func(http.ResponseWriter, *http.Request)) Option {
 	}
 }
 
-// Middleware enforces Bearer (or raw token) auth when expected token is non-empty.
-// Empty expected token disables auth (local/dev convenience).
+// Middleware enforces Bearer (or raw token) auth. An empty expected token never
+// authorizes anything (fail-closed): a missing SERVICE_TOKEN must not expose rag
+// or scoring to the rest of the cluster.
 func Middleware(expectedToken string, opts ...Option) func(http.Handler) http.Handler {
 	cfg := options{}
 	for _, opt := range opts {
@@ -34,12 +35,8 @@ func Middleware(expectedToken string, opts ...Option) func(http.Handler) http.Ha
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.TrimSpace(expectedToken) == "" {
-				next.ServeHTTP(w, r)
-				return
-			}
 			got := extractToken(r.Header.Get("Authorization"))
-			if !secureEqual(got, expectedToken) {
+			if strings.TrimSpace(expectedToken) == "" || !secureEqual(got, expectedToken) {
 				cfg.unauthorized(w, r)
 				return
 			}

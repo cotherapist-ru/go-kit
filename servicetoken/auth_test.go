@@ -8,14 +8,15 @@ import (
 	"testing"
 )
 
-func TestMiddlewareEmptyTokenAllows(t *testing.T) {
+func TestMiddlewareEmptyTokenRejects(t *testing.T) {
 	h := Middleware("")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Authorization", "Bearer anything")
 	rr := httptest.NewRecorder()
 	h.ServeHTTP(rr, req)
-	if rr.Code != http.StatusOK {
+	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("code=%d", rr.Code)
 	}
 }

@@ -7,7 +7,7 @@
 ## Установка
 
 ```bash
-go get github.com/cotherapist-ru/go-kit@v0.1.2
+go get github.com/cotherapist-ru/go-kit@v0.1.3
 ```
 
 Module path совпадает с GitHub-репозиторием. Теги — semver с префиксом `v`.
@@ -17,7 +17,7 @@ Module path совпадает с GitHub-репозиторием. Теги — 
 | Импорт | Назначение |
 |---|---|
 | `github.com/cotherapist-ru/go-kit/logging` | slog Setup, request logger, context |
-| `github.com/cotherapist-ru/go-kit/httpserver` | chi-роутер и graceful shutdown |
+| `github.com/cotherapist-ru/go-kit/httpserver` | chi-роутер, security-заголовки, graceful shutdown |
 | `github.com/cotherapist-ru/go-kit/healthz` | `/healthz` plain и JSON |
 | `github.com/cotherapist-ru/go-kit/httpjson` | `Write` JSON-ответов |
 | `github.com/cotherapist-ru/go-kit/envconfig` | чтение env |
@@ -56,6 +56,9 @@ httpserver.Run(httpserver.Options{Addr: ":" + cfg.Port, Handler: r})
 
 `admintoken`: принимается только `Authorization: Bearer`, сравнение constant-time.
 `WithQueryToken()` оставлен для совместимости и ничего не делает (токены в URL попадают в логи).
+
+`servicetoken`: пустой ожидаемый токен больше не отключает аутентификацию (fail-closed).
+В Kubernetes / `APP_ENV=production` rag и testing обязаны задать токен при старте.
 
 ## Разработка
 
