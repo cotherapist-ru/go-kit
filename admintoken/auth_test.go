@@ -32,15 +32,40 @@ func TestBearerRejected(t *testing.T) {
 	}
 }
 
-func TestQueryToken(t *testing.T) {
+func TestQueryTokenIgnoredEvenWithDeprecatedOption(t *testing.T) {
 	h := Middleware("secret", WithQueryToken())(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	req := httptest.NewRequest(http.MethodGet, "/?token=secret", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
-	if rec.Code != http.StatusNoContent {
+	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("code=%d", rec.Code)
+	}
+}
+
+func TestEmptyTokenNeverAuthorizes(t *testing.T) {
+	h := Middleware("")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	for _, header := range []string{"", "Bearer", "Bearer ", "Bearer  "} {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		if header != "" {
+			req.Header.Set("Authorization", header)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusUnauthorized {
+			t.Fatalf("header %q: code=%d", header, rec.Code)
+		}
+	}
+}
+
+func TestBearerPrefixCaseInsensitive(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Authorization", "bearer secret")
+	if !Authorized(req, "secret") {
+		t.Fatal("expected authorized")
 	}
 }
 

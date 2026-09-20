@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cotherapist-ru/go-kit/clientip"
 	"github.com/cotherapist-ru/go-kit/logging"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -54,7 +55,7 @@ func WithoutLogger() RouterOption {
 	}
 }
 
-// NewRouter returns a chi router with RequestID, RealIP, request logger, Recoverer and Timeout.
+// NewRouter returns a chi router with RequestID, trusted-proxy client IP (clientip), request logger, Recoverer and Timeout.
 func NewRouter(opts ...RouterOption) *chi.Mux {
 	cfg := routerOptions{}
 	for _, opt := range opts {
@@ -63,7 +64,9 @@ func NewRouter(opts ...RouterOption) *chi.Mux {
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
+	// Not chi's middleware.RealIP: it trusts X-Forwarded-For / X-Real-IP / True-Client-IP from
+	// any peer, which lets clients choose their own IP for logs and rate limits.
+	r.Use(clientip.Default.Middleware)
 	if !cfg.skipLogger {
 		logger := cfg.logger
 		if logger == nil {

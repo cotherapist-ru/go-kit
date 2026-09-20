@@ -1,23 +1,25 @@
 package admintoken
 
 import (
+	"crypto/subtle"
 	"net/http"
 	"strings"
 )
 
 type options struct {
-	allowQuery        bool
 	requireConfigured bool
 }
 
 // Option configures Middleware.
 type Option func(*options)
 
-// WithQueryToken also accepts ?token= in addition to Authorization: Bearer.
+// WithQueryToken used to accept ?token= in addition to Authorization: Bearer.
+//
+// Deprecated: tokens in URLs leak through access logs, browser history and the Referer
+// header, so query tokens are no longer accepted. This option is a no-op kept for source
+// compatibility; send the token in the Authorization header.
 func WithQueryToken() Option {
-	return func(o *options) {
-		o.allowQuery = true
-	}
+	return func(*options) {}
 }
 
 // RequireConfigured returns 503 when the token is empty instead of 401.
@@ -27,7 +29,8 @@ func RequireConfigured() Option {
 	}
 }
 
-// Middleware protects admin API routes with a shared token.
+// Middleware protects admin API routes with a shared token sent as
+// "Authorization: Bearer <token>". An empty configured token never authorizes anything.
 func Middleware(adminToken string, opts ...Option) func(http.Handler) http.Handler {
 	cfg := options{}
 	for _, opt := range opts {
@@ -40,7 +43,7 @@ func Middleware(adminToken string, opts ...Option) func(http.Handler) http.Handl
 				http.Error(w, "admin api disabled", http.StatusServiceUnavailable)
 				return
 			}
-			if !authorized(r, adminToken, cfg.allowQuery) {
+			if !Authorized(r, adminToken) {
 				http.Error(w, "unauthorized", http.StatusUnauthorized)
 				return
 			}
@@ -49,15 +52,17 @@ func Middleware(adminToken string, opts ...Option) func(http.Handler) http.Handl
 	}
 }
 
-func authorized(r *http.Request, adminToken string, allowQuery bool) bool {
-	if allowQuery {
-		if token := r.URL.Query().Get("token"); token != "" && token == adminToken {
-			return true
-		}
+// Authorized reports whether r carries "Authorization: Bearer <adminToken>".
+// The comparison is constant-time; an empty adminToken is never authorized.
+func Authorized(r *http.Request, adminToken string) bool {
+	if adminToken == "" {
+		return false
 	}
 	auth := r.Header.Get("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") {
-		return strings.TrimPrefix(auth, "Bearer ") == adminToken
+	const prefix = "Bearer "
+	if len(auth) <= len(prefix) || !strings.EqualFold(auth[:len(prefix)], prefix) {
+		return false
 	}
-	return false
+	got := strings.TrimSpace(auth[len(prefix):])
+	return subtle.ConstantTimeCompare([]byte(got), []byte(adminToken)) == 1
 }
