@@ -23,9 +23,43 @@ func TestSecurityHeaders(t *testing.T) {
 	if csp == "" || !strings.Contains(csp, "frame-ancestors 'none'") {
 		t.Fatalf("csp=%q", csp)
 	}
+	assertCSPDirectiveContains(t, csp, "script-src",
+		"https://smartcaptcha.yandexcloud.net",
+		"https://smartcaptcha.cloud.yandex.ru",
+	)
+	assertCSPDirectiveContains(t, csp, "connect-src",
+		"https://smartcaptcha.yandexcloud.net",
+		"https://smartcaptcha.cloud.yandex.ru",
+	)
+	assertCSPDirectiveContains(t, csp, "frame-src",
+		"'self'",
+		"https://smartcaptcha.yandexcloud.net",
+		"https://smartcaptcha.cloud.yandex.ru",
+		"https://mc.yandex.ru",
+		"https://mc.yandex.com",
+	)
+	assertCSPDirectiveContains(t, csp, "worker-src", "'self'", "blob:")
 	if rec.Header().Get("Strict-Transport-Security") != "" {
 		t.Fatal("HSTS must stay off unless HTTPSERVER_HSTS/COOKIE_SECURE is set")
 	}
+}
+
+func assertCSPDirectiveContains(t *testing.T, csp, directive string, tokens ...string) {
+	t.Helper()
+	for _, part := range strings.Split(csp, ";") {
+		part = strings.TrimSpace(part)
+		name, rest, ok := strings.Cut(part, " ")
+		if !ok || name != directive {
+			continue
+		}
+		for _, token := range tokens {
+			if !strings.Contains(rest, token) {
+				t.Fatalf("csp %s missing %q: %q", directive, token, csp)
+			}
+		}
+		return
+	}
+	t.Fatalf("csp missing %s: %q", directive, csp)
 }
 
 func TestSecurityHeadersHSTS(t *testing.T) {

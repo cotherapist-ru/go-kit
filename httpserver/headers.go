@@ -8,9 +8,11 @@ import (
 
 // defaultCSP is a baseline policy for public Go services. Inline style/script are
 // allowed because existing promo/feedback/public-testing pages use them. Object
-// plugins and framing are forbidden. A service can send a stricter CSP afterwards;
-// browsers AND multiple policies together.
-const defaultCSP = "default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.yandexcloud.net https://mc.yandex.ru; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://smartcaptcha.yandexcloud.net https://mc.yandex.ru; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+// plugins and embedding this origin in third-party pages are forbidden. SmartCaptcha
+// and Yandex Metrika (webvisor) load cross-origin iframes, so frame-src lists those
+// hosts instead of inheriting default-src 'self'. A service can send a stricter CSP
+// afterwards; browsers AND multiple policies together.
+const defaultCSP = "default-src 'self'; script-src 'self' 'unsafe-inline' https://smartcaptcha.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://mc.yandex.ru; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://smartcaptcha.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://mc.yandex.ru; worker-src 'self' blob:; frame-src 'self' https://smartcaptcha.yandexcloud.net https://smartcaptcha.cloud.yandex.ru https://mc.yandex.ru https://mc.yandex.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
 
 // SecurityHeaders sets nosniff, anti-clickjacking, Referrer-Policy, a baseline CSP
 // and (when HTTPSERVER_HSTS or COOKIE_SECURE is set) HSTS.

@@ -7,7 +7,7 @@
 ## Установка
 
 ```bash
-go get github.com/cotherapist-ru/go-kit@v0.1.3
+go get github.com/cotherapist-ru/go-kit@v0.1.4
 ```
 
 Module path совпадает с GitHub-репозиторием. Теги — semver с префиксом `v`.
