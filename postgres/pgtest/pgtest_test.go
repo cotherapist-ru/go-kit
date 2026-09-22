@@ -24,6 +24,23 @@ func TestStartConnectPing(t *testing.T) {
 	}
 }
 
+func TestStartFollowsDATABASEHost(t *testing.T) {
+	owned := Start(t)
+	cfg := owned.Config()
+	t.Setenv("DATABASE_HOST", cfg.Host)
+	t.Setenv("DATABASE_PORT", strconv.Itoa(cfg.Port))
+	t.Setenv("DATABASE_USER", cfg.User)
+	t.Setenv("DATABASE_PASSWORD", cfg.Password)
+
+	again := Start(t)
+	if again.owned {
+		t.Fatal("Start must reuse DATABASE_HOST instead of launching Testcontainers")
+	}
+	if again.Config().Host != cfg.Host || again.Config().Port != cfg.Port {
+		t.Fatalf("got %+v want %+v", again.Config(), cfg)
+	}
+}
+
 func TestStartOrEnvReusesDATABASEHost(t *testing.T) {
 	owned := Start(t)
 	cfg := owned.Config()

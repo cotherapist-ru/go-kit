@@ -65,18 +65,18 @@ func (c *Container) Config() postgres.Config {
 	return c.cfg
 }
 
-// Start launches postgres:17 and registers container termination on tb.Cleanup.
-// Without Docker the test is skipped, unless PGTEST_REQUIRE is truthy (then Fatal).
+// Start is StartOrEnv: reuse DATABASE_* when DATABASE_HOST is set (CI sidecar),
+// otherwise launch postgres:17 via Testcontainers.
 func Start(tb testing.TB, opts ...Option) *Container {
 	tb.Helper()
-	return startContainer(tb, applyOptions(opts))
+	return StartOrEnv(tb, opts...)
 }
 
-// StartOrEnv uses DATABASE_* when DATABASE_HOST is set; otherwise Start.
+// StartOrEnv uses DATABASE_* when DATABASE_HOST is set; otherwise starts a container.
 func StartOrEnv(tb testing.TB, opts ...Option) *Container {
 	tb.Helper()
 	if strings.TrimSpace(os.Getenv("DATABASE_HOST")) == "" {
-		return Start(tb, opts...)
+		return startContainer(tb, applyOptions(opts))
 	}
 	cfg, err := postgres.Load(defaultUser)
 	if err != nil {
