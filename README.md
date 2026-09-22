@@ -7,7 +7,7 @@
 ## Установка
 
 ```bash
-go get github.com/cotherapist-ru/go-kit@v0.1.4
+go get github.com/cotherapist-ru/go-kit@v0.2.0
 ```
 
 Module path совпадает с GitHub-репозиторием. Теги — semver с префиксом `v`.
@@ -22,6 +22,7 @@ Module path совпадает с GitHub-репозиторием. Теги — 
 | `github.com/cotherapist-ru/go-kit/httpjson` | `Write` JSON-ответов |
 | `github.com/cotherapist-ru/go-kit/envconfig` | чтение env |
 | `github.com/cotherapist-ru/go-kit/postgres` | pgx pool, bootstrap DB, SQL-миграции |
+| `github.com/cotherapist-ru/go-kit/postgres/pgtest` | Testcontainers Postgres для `_test.go` |
 | `github.com/cotherapist-ru/go-kit/admintoken` | Bearer admin API |
 | `github.com/cotherapist-ru/go-kit/servicetoken` | Bearer service-to-service |
 | `github.com/cotherapist-ru/go-kit/captcha` | Yandex SmartCaptcha |
@@ -66,7 +67,18 @@ httpserver.Run(httpserver.Options{Addr: ":" + cfg.Port, Handler: r})
 go test ./...
 ```
 
-Требуется Go >= 1.23.
+Требуется Go >= 1.25.
+
+Интеграционные тесты с живой БД (только из `_test.go`):
+
+```go
+import "github.com/cotherapist-ru/go-kit/postgres/pgtest"
+
+ctr := pgtest.Start(t) // или pgtest.StartOrEnv(t), если задан DATABASE_HOST
+pool := ctr.Connect(t, pgtest.DatabaseName(t), migrations.Files)
+```
+
+Без Docker тест пропускается. В CI задайте `PGTEST_REQUIRE=1`, чтобы отсутствие Docker было ошибкой.
 
 Локально в соседнем checkout сервиса:
 

@@ -29,7 +29,7 @@ git push -u origin main
 
 ## 2. Проверка CI
 
-После push в `main`: Actions → workflow **CI** (`go test ./...` на Go 1.23 и 1.25).
+После push в `main`: Actions → workflow **CI** (`go test ./...` на Go 1.25, `PGTEST_REQUIRE=1`).
 
 Локально:
 
